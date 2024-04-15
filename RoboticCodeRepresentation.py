@@ -9,11 +9,7 @@ class Node:
 
 
 file = open("RCR_commands.txt", mode="r")
-commands = []
-for line in file:
-    commands.append(file.readline())
+commands = file.read().splitlines()
 
-
-print(commands)
-
-
+for command in commands:
+    print(command)
