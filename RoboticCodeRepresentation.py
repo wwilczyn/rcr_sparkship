@@ -1,9 +1,13 @@
 from typing import List
 
 
+COMMAND_NAME = 0
+FREQUENCY = 1
+
+
 class Node:
     def __init__(self, command_name, frequency=0, left_node=None, right_node=None):
-        self.command_name = command_name
+        self.command_name = command_name[0]
         self.frequency = frequency
         self.left_node = left_node
         self.right_node = right_node
@@ -11,7 +15,7 @@ class Node:
     def __str__(self):
         # return self.command_name + " (" + str(self.frequency) + ")" + "\n" + "\t" + "/\\"
         # return str(self.command_name).split('\'')[1]
-        return self.command_name[0]
+        return self.command_name
 
     def __eq__(self, other):
         return self.frequency == other.frequency
@@ -20,9 +24,11 @@ class Node:
         return self.command_name
 
 
+root: Node
+
+
 class RoboticCodeRepresentationGenerator:
     command_tuples = []
-    root: Node
 
     def __init__(self, issued_commands: List[str]):
         unique_commands = []
@@ -38,42 +44,46 @@ class RoboticCodeRepresentationGenerator:
         last = len(self.command_tuples)
         print(self.command_tuples)
         for k in range(0, last):
-            for i in range(0, last-k-1):
+            for i in range(0, last - k - 1):
                 if self.command_tuples[i][1] < self.command_tuples[i + 1][1]:
                     new_item = self.command_tuples[i]
                     self.command_tuples[i] = self.command_tuples[i + 1]
                     self.command_tuples[i + 1] = new_item
 
+        # make tree from command_tuples list
+        last_command = self.command_tuples[-1][COMMAND_NAME]
         index = 0
-        last = self.command_tuples[-1]
-        self.root = Node(self.command_tuples[index], int(self.command_tuples[index][1]), None, None)
-        while self.command_tuples[index+1] != last:
-            command = Node(self.command_tuples[index], int(self.command_tuples[index][1]), None, None)
-            print('\t' * index, command)
-            if command.frequency >= int(self.command_tuples[index+1][1]):
-                command.right_node = Node(self.command_tuples[index+1], int(self.command_tuples[index+1][1]), None, None)
-            else:
-                command.left_node = Node(self.command_tuples[index+1], int(self.command_tuples[index+1][1]), None, None)
+        # command = self.command_tuples[index][0]
+        new_node = Node(self.command_tuples[index], int(self.command_tuples[index][FREQUENCY]), None, None)
+        global root
+        root = new_node
+        while new_node.command_name != last_command:
+            if self.command_tuples[index][COMMAND_NAME] == last_command:
+                break
             index += 1
+            next_command = self.command_tuples[index]  # tuple: (command_name, frequency)
+            new_node.right_node = Node(next_command, next_command[FREQUENCY], None, None)
+            new_node = new_node.right_node
 
     def get_rcr(self, rcr_command: str) -> str:
-        start = self.root
+        start = root
         rcr_string = "0"
         rcr_command = rcr_command.upper()
 
-        print(start)
-        print(rcr_command)
+        # print("start: {}".format(start))
+        # print(rcr_command)
+        # print("rcr_command: ", rcr_command)
 
-        while start.command_name[0] != rcr_command:
+        while start.command_name != rcr_command:
             if start.right_node is not None:
                 start = start.right_node
-                rcr_string.join("0")
+                rcr_string += "0"
             elif start.left_node is not None:
                 start = start.left_node
-                rcr_string.join("1")
+                rcr_string += "1"
             else:
-                print(start.right_node)
-                print(start.left_node)
+                print("right node: {}".format(start.right_node))
+                print("left node: {}".format(start.left_node))
                 break
 
         return rcr_string
@@ -84,6 +94,16 @@ file = open("RCR_commands.txt", mode="r")
 commands = file.read().splitlines()
 rcr = RoboticCodeRepresentationGenerator(commands)
 print(RoboticCodeRepresentationGenerator.command_tuples)
+
+saved_root = root
+i = 0
+while root is not None:
+    print("\t"*i, root)
+    root = root.right_node
+    i += 1
+root = saved_root
+# print("root: ", root)
+# print("root.right_node: ", root.right_node)
 
 command_to_see = input("Enter the command name for which you want to see the RCR: ")
 command_to_see = command_to_see.upper()
